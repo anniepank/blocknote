@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Blocknote", "Blocknote\Bloc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{7E84C866-F95B-4FE5-AC66-B80144596D99}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto", "Crypto\Crypto.csproj", "{93332B0F-8986-466D-85B7-41F6E9A59B0B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{7E84C866-F95B-4FE5-AC66-B80144596D99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E84C866-F95B-4FE5-AC66-B80144596D99}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7E84C866-F95B-4FE5-AC66-B80144596D99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93332B0F-8986-466D-85B7-41F6E9A59B0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93332B0F-8986-466D-85B7-41F6E9A59B0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93332B0F-8986-466D-85B7-41F6E9A59B0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93332B0F-8986-466D-85B7-41F6E9A59B0B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

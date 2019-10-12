@@ -8,29 +8,27 @@ using System.Threading.Tasks;
 
 namespace Blocknote
 {
-    class FormManager
+    class Connection
     {
-        public RSAParameters publicKey;
+        private RSAParameters publicKey;
         private RSAParameters privateKey;
         private RSACryptoServiceProvider cryptoServiceProvider;
         public int RSAKeySize = 1024;
+        private TcpClient client;
 
-        public FormManager()
+        public Connection(TcpClient client)
         {
-
-        }
-
-        public void generateRSAKeys()
-        {
+            this.client = client;
             cryptoServiceProvider = new RSACryptoServiceProvider();
 
             privateKey = cryptoServiceProvider.ExportParameters(true);
             publicKey = cryptoServiceProvider.ExportParameters(false);
 
-            var pks = Serializer.SerializeKey(publicKey);
-            var dpk = Serializer.DeserializeKey(pks);
-            Console.Write(dpk.Equals(publicKey));
+        }
 
+        public byte[] Decrypt(byte[] message)
+        {
+            return cryptoServiceProvider.Decrypt(message, false);
         }
 
         public string SerializePublicKey()
@@ -38,16 +36,21 @@ namespace Blocknote
             return Serializer.SerializeKey(publicKey);
         }
 
-        public void SendPublicKeyToServer(NetworkStream ns) 
+        public void SendPublicKeyToServer() 
         {
             var serializedKey = Encoding.Default.GetBytes(SerializePublicKey());
-            ns.Write(serializedKey, 0, serializedKey.Length);
+            Send(serializedKey);
         }
 
-        public void SendTextName(string name, NetworkStream ns)
+        public void SendTextName(string name)
         {
             var msg = Encoding.Default.GetBytes(name);
-            ns.Write(msg, 0, msg.Length);
+            Send(msg);
+        }
+
+        public void Send(byte[] msg)
+        {
+            client.GetStream().Write(msg, 0, msg.Length);
         }
 
     }

@@ -49,9 +49,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Blocknote\Blocknote.csproj">
-      <Project>{95b0fe30-0658-47b8-bf8f-4e969bcdfded}</Project>
-      <Name>Blocknote</Name>
+    <ProjectReference Include="..\Crypto\Crypto.csproj">
+      <Project>{93332b0f-8986-466d-85b7-41f6e9a59b0b}</Project>
+      <Name>Crypto</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
