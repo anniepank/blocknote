@@ -33,7 +33,9 @@ namespace Blocknote
 
             formManager.SendPublicKeyToServer(ns);
 
-            Thread.Sleep(1000); 
+            Thread.Sleep(1000);
+
+            formManager.SendTextName("simple.txt", ns);
 
             // reading response from server
             byte[] serverResponse = new byte[1024];

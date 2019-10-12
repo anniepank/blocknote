@@ -24,6 +24,14 @@ namespace Server
             return Serializer.DeserializeKey(response);
         }
 
+        public static string GetTextNameFromClient(TcpClient client, NetworkStream ns)
+        {
+            byte[] buffer = new byte[client.ReceiveBufferSize];
+            int bytesRead = ns.Read(buffer, 0, client.ReceiveBufferSize);
+
+            return Encoding.Default.GetString(buffer, 0, bytesRead);
+        }
+
         static void Main(string[] args)
         {
             TcpListener server = new TcpListener(IPAddress.Any, 9999);
@@ -35,6 +43,8 @@ namespace Server
                 NetworkStream ns = client.GetStream();
 
                 var publicKey = GetPublicKeyFromClient(ns);
+
+                var textName = GetTextNameFromClient(client, ns);
                 
                 ns.Close();
                 client.Dispose();

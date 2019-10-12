@@ -14,6 +14,7 @@ namespace Blocknote
         private RSAParameters privateKey;
         private RSACryptoServiceProvider cryptoServiceProvider;
         public int RSAKeySize = 1024;
+
         public FormManager()
         {
 
@@ -41,6 +42,12 @@ namespace Blocknote
         {
             var serializedKey = Encoding.Default.GetBytes(SerializePublicKey());
             ns.Write(serializedKey, 0, serializedKey.Length);
+        }
+
+        public void SendTextName(string name, NetworkStream ns)
+        {
+            var msg = Encoding.Default.GetBytes(name);
+            ns.Write(msg, 0, msg.Length);
         }
 
     }
