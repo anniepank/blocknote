@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,20 +22,27 @@ namespace Blocknote
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            var formManager = new FormManager();
+            formManager.generateRSAKeys();
+
+
+            // establishing connection with server
             var client = new TcpClient();
             client.Connect("127.0.0.1", 9999);
-
             var ns = client.GetStream();
 
-            var msg = Encoding.Default.GetBytes("hello from client");
-            ns.Write(msg, 0, msg.Length);
+            formManager.SendPublicKeyToServer(ns);
 
-            Thread.Sleep(1000);
+            Thread.Sleep(1000); 
 
-            byte[] serverMessage = new byte[128];
-            ns.Read(serverMessage, 0, serverMessage.Length);
+            // reading response from server
+            byte[] serverResponse = new byte[1024];
+            ns.Read(serverResponse, 0, serverResponse.Length);
+            var serverResponseString = Encoding.Default.GetString(serverResponse);
+            
 
-            serverMessageLabel.Text = Encoding.Default.GetString(serverMessage);
+            serverMessageLabel.Text = Encoding.Default.GetString(serverResponse);
+
             
 
             ns.Close();
