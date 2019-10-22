@@ -32,20 +32,21 @@
             this.button1 = new System.Windows.Forms.Button();
             this.serverResponse = new System.Windows.Forms.Label();
             this.serverText = new System.Windows.Forms.TextBox();
+            this.getSessionKeyButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // serverMessageLabel
             // 
             this.serverMessageLabel.AutoSize = true;
-            this.serverMessageLabel.Location = new System.Drawing.Point(145, 87);
+            this.serverMessageLabel.Location = new System.Drawing.Point(283, 38);
             this.serverMessageLabel.Name = "serverMessageLabel";
-            this.serverMessageLabel.Size = new System.Drawing.Size(51, 20);
+            this.serverMessageLabel.Size = new System.Drawing.Size(133, 20);
             this.serverMessageLabel.TabIndex = 0;
-            this.serverMessageLabel.Text = "label1";
+            this.serverMessageLabel.Text = "Server responses";
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(149, 169);
+            this.button1.Location = new System.Drawing.Point(200, 258);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 1;
@@ -70,11 +71,22 @@
             this.serverText.Size = new System.Drawing.Size(100, 26);
             this.serverText.TabIndex = 3;
             // 
+            // getSessionKeyButton
+            // 
+            this.getSessionKeyButton.Location = new System.Drawing.Point(42, 26);
+            this.getSessionKeyButton.Name = "getSessionKeyButton";
+            this.getSessionKeyButton.Size = new System.Drawing.Size(177, 44);
+            this.getSessionKeyButton.TabIndex = 4;
+            this.getSessionKeyButton.Text = "Get AES";
+            this.getSessionKeyButton.UseVisualStyleBackColor = true;
+            this.getSessionKeyButton.Click += new System.EventHandler(this.getSessionKeyButton_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.getSessionKeyButton);
             this.Controls.Add(this.serverText);
             this.Controls.Add(this.serverResponse);
             this.Controls.Add(this.button1);
@@ -93,6 +105,7 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Label serverResponse;
         private System.Windows.Forms.TextBox serverText;
+        private System.Windows.Forms.Button getSessionKeyButton;
     }
 }
 

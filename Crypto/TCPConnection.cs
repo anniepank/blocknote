@@ -18,7 +18,7 @@ namespace Crypto
 
         public const int PUBLIC_KEY_HEADER = 1;
         public const int FILE_NAME_HEADER = 2;
-        public const int GENERATE_SESSION_KEY = 3;
+        public const int GET_SESSION_KEY = 3;
         public const int ENCRYPTED_AES_WITH_RSA = 5;
 
     }

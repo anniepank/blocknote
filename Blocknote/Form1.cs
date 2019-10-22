@@ -32,6 +32,8 @@ namespace Blocknote
             client = new TcpClient();
             client.Connect("127.0.0.1", 9999);
 
+
+            // RSA keys are generated inside
             var connection = new Connection(client);
             ns = client.GetStream();
 
@@ -130,6 +132,11 @@ namespace Blocknote
         private void label1_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void getSessionKeyButton_Click(object sender, EventArgs e)
+        {
+            Connection.Send(client, TCPConnection.GET_SESSION_KEY, null);
         }
     }
 }

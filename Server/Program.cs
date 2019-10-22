@@ -18,7 +18,7 @@ namespace Server
         private static TcpListener server;
         private static NetworkStream ns;
         private static TcpClient client;
-
+        private static AES aes;
 
         public static RijndaelManaged myRijndael;
 
@@ -58,9 +58,12 @@ namespace Server
 
         public static void Send(TcpClient client, int messageType, byte[] msg)
         {
-            client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
-            client.GetStream().Write(BitConverter.GetBytes(msg.Length), 0, 4);
-            client.GetStream().Write(msg, 0, msg.Length);
+            if (client.GetStream() != null && client.GetStream().CanWrite)
+            {
+                client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
+                client.GetStream().Write(BitConverter.GetBytes(msg.Length), 0, 4);
+                client.GetStream().Write(msg, 0, msg.Length);
+            }
         }
 
 
@@ -73,25 +76,23 @@ namespace Server
                 {
                     Send(client, TCPConnection.ENCRYPTED_AES_WITH_RSA, Encoding.UTF8.GetBytes("encrypted key from server"));
                 }
-                else
-                {
-                    Console.WriteLine("Stop listening.");
-                    if (server != null)
-                    {
-                        server.Stop();
-                        break;
-                    }
-                }
             }
+        }
+
+
+        public static void GenerateSessionKey()
+        {
+            aes = new AES();
+            aes.GenerateSessionKey();
         }
 
         static void Main(string[] args)
         {
-            var aes = new AES();
-            aes.GenerateSessionKey();
-
+            
+            
             var original = "abs";
-            byte[] encrypted = AES.EncryptStringToBytes(original, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
+            /*
+                byte[] encrypted = AES.EncryptStringToBytes(original, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
 
             // Decrypt the bytes to a string.
             string roundtrip = AES.DecryptStringFromBytes(encrypted, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
@@ -99,6 +100,7 @@ namespace Server
             //Display the original data and the decrypted data.
             Console.WriteLine("Original:   {0}", original);
             Console.WriteLine("Round Trip: {0}", roundtrip);
+            */
 
             server = new TcpListener(IPAddress.Any, 9999);
             server.Start();
@@ -113,29 +115,28 @@ namespace Server
                     while (true)
                     {
                         var messageType = BitConverter.ToInt32(Receive(client, 4), 0);
-                        var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
 
-                        byte[] bufferToRead = Receive(client, lenBytes);
-
-                        if (lenBytes > 0)
+                        if (messageType == TCPConnection.GET_SESSION_KEY)
                         {
-                            string result = Encoding.UTF8.GetString(bufferToRead);
-
-                            Console.WriteLine(result.Trim());
+                            GenerateSessionKey();
                         }
-                        else
+
+
+                        if (messageType != TCPConnection.GET_SESSION_KEY)
                         {
-                            Console.WriteLine("Client disconnected");
-                            ns.Dispose();
-                            client.Close();
-                            server.Stop();
-                            break;
+                            var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
+
+                            byte[] bufferToRead = Receive(client, lenBytes);
+
+                            if (lenBytes > 0)
+                            {
+                                string result = Encoding.UTF8.GetString(bufferToRead);
+
+                                Console.WriteLine(result.Trim());
+                            }
                         }
                     }
                 });
-
-                ResponseToClient();
-
 
 
                 /*

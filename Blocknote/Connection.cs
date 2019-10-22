@@ -64,9 +64,16 @@ namespace Blocknote
 
         public static void Send(TcpClient client, int messageType, byte[] msg)
         {
-            client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
-            client.GetStream().Write(BitConverter.GetBytes(msg.Length), 0, 4);
-            client.GetStream().Write(msg, 0, msg.Length);
+            if (client.GetStream().CanWrite && client.GetStream() != null)
+            {
+                client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
+                if (messageType != TCPConnection.GET_SESSION_KEY)
+                {
+                    client.GetStream().Write(BitConverter.GetBytes(msg.Length), 0, 4);
+                    client.GetStream().Write(msg, 0, msg.Length);
+                }
+            }
+
         }
 
     }
