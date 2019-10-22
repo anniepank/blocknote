@@ -19,22 +19,24 @@ namespace Server
         private static NetworkStream ns;
         private static TcpClient client;
         private static AES aes;
+        private static RSACryptoServiceProvider rsa;
 
         public static RijndaelManaged myRijndael;
 
-        /*
+        
 
-        public static RSAParameters GetPublicKeyFromClient(NetworkStream ns)
+        private static RSACryptoServiceProvider GetPublicKeyFromClient(TcpClient client, int len)
         {
-            var msg = new byte[1024];
+            
+                
+            var msg = Receive(client, len);
+            RSAParameters publicKey = Serializer.DeserializeKey(Encoding.Default.GetString(msg));
+            var rsa = new RSACryptoServiceProvider();
+            rsa.ImportParameters(publicKey);
 
-            ns.Read(msg, 0, msg.Length);
-
-            var response = Encoding.Default.GetString(msg);
-
-            return Serializer.DeserializeKey(response);
+            return rsa;
         }
-
+        /*
         public static string GetTextNameFromClient(TcpClient client, NetworkStream ns)
         {
             byte[] buffer = new byte[client.ReceiveBufferSize];
@@ -119,6 +121,12 @@ namespace Server
                         if (messageType == TCPConnection.GET_SESSION_KEY)
                         {
                             GenerateSessionKey();
+                        }
+
+                        if (messageType == TCPConnection.PUBLIC_KEY)
+                        {
+                            var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
+                            rsa = GetPublicKeyFromClient(client, lenBytes);
                         }
 
 

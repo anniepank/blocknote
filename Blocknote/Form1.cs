@@ -37,6 +37,9 @@ namespace Blocknote
             var connection = new Connection(client);
             ns = client.GetStream();
 
+            // Client send RSA public key to server
+            connection.SendPublicKeyToServer(client);
+
             ReceiveResponseFromServerAsync();
 
             /*
@@ -49,7 +52,7 @@ namespace Blocknote
 
             }
 
-            connection.SendPublicKeyToServer();
+            
 
             
             // 4 bytes contains message length
@@ -121,7 +124,7 @@ namespace Blocknote
         {
             string somethingToSay = "hello from client";
             byte[] buffer = Encoding.UTF8.GetBytes(somethingToSay);
-            Connection.Send(client, TCPConnection.PUBLIC_KEY_HEADER, buffer);
+            Connection.Send(client, TCPConnection.PUBLIC_KEY, buffer);
         }
 
         private void button1_Click(object sender, EventArgs e)

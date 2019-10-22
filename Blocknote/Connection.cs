@@ -39,9 +39,8 @@ namespace Blocknote
 
         public void SendPublicKeyToServer(TcpClient client) 
         {
-
             var serializedKey = Encoding.Default.GetBytes(SerializePublicKey());
-            Send(client, TCPConnection.PUBLIC_KEY_HEADER, serializedKey);
+            Send(client, TCPConnection.PUBLIC_KEY, serializedKey);
         }
 
         public void SendTextName(TcpClient client, string name)
