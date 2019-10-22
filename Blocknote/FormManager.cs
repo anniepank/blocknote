@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Crypto;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Blocknote
 {
-    class Connection
+    public class Connection
     {
         private RSAParameters publicKey;
         private RSAParameters privateKey;
@@ -36,20 +37,35 @@ namespace Blocknote
             return Serializer.SerializeKey(publicKey);
         }
 
-        public void SendPublicKeyToServer() 
+        public void SendPublicKeyToServer(TcpClient client) 
         {
+
             var serializedKey = Encoding.Default.GetBytes(SerializePublicKey());
-            Send(serializedKey);
+            Send(client, TCPConnection.PUBLIC_KEY_HEADER, serializedKey);
         }
 
-        public void SendTextName(string name)
+        public void SendTextName(TcpClient client, string name)
         {
             var msg = Encoding.Default.GetBytes(name);
-            Send(msg);
+            Send(client, TCPConnection.FILE_NAME_HEADER, msg);
         }
 
-        public void Send(byte[] msg)
+        public static byte[] Receive(TcpClient client, int length)
         {
+            var message = new byte[length];
+            int read = 0;
+            while (read < message.Length)
+            {
+                read += client.GetStream().Read(message, read, message.Length - read);
+            }
+
+            return message;
+        }
+
+        public static void Send(TcpClient client, int messageType, byte[] msg)
+        {
+            client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
+            client.GetStream().Write(BitConverter.GetBytes(msg.Length), 0, 4);
             client.GetStream().Write(msg, 0, msg.Length);
         }
 

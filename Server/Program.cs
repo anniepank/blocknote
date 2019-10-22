@@ -1,4 +1,5 @@
 using Blocknote;
+using Crypto;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,7 +15,14 @@ namespace Server
 {
     class Program
     {
+        private static TcpListener server;
+        private static NetworkStream ns;
+        private static TcpClient client;
+
+
         public static RijndaelManaged myRijndael;
+
+        /*
 
         public static RSAParameters GetPublicKeyFromClient(NetworkStream ns)
         {
@@ -34,6 +42,48 @@ namespace Server
 
             return Encoding.Default.GetString(buffer, 0, bytesRead);
         }
+        */
+
+        public static byte[] Receive(TcpClient client, int length)
+        {
+            var message = new byte[length];
+            int read = 0;
+            while (read < message.Length)
+            {
+                read += client.GetStream().Read(message, read, message.Length - read);
+            }
+
+            return message;
+        }
+
+        public static void Send(TcpClient client, int messageType, byte[] msg)
+        {
+            client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
+            client.GetStream().Write(BitConverter.GetBytes(msg.Length), 0, 4);
+            client.GetStream().Write(msg, 0, msg.Length);
+        }
+
+
+        private static void ResponseToClient()
+        {
+            while (true)
+            {
+
+                if (ns != null && ns.CanWrite)
+                {
+                    Send(client, TCPConnection.ENCRYPTED_AES_WITH_RSA, Encoding.UTF8.GetBytes("encrypted key from server"));
+                }
+                else
+                {
+                    Console.WriteLine("Stop listening.");
+                    if (server != null)
+                    {
+                        server.Stop();
+                        break;
+                    }
+                }
+            }
+        }
 
         static void Main(string[] args)
         {
@@ -50,13 +100,51 @@ namespace Server
             Console.WriteLine("Original:   {0}", original);
             Console.WriteLine("Round Trip: {0}", roundtrip);
 
-            TcpListener server = new TcpListener(IPAddress.Any, 9999);
+            server = new TcpListener(IPAddress.Any, 9999);
             server.Start();
             while (true)
             {
-                TcpClient client = server.AcceptTcpClient();
+                client = server.AcceptTcpClient();
 
-                NetworkStream ns = client.GetStream();
+                ns = client.GetStream();
+
+                Task.Factory.StartNew(() =>
+                {
+                    while (true)
+                    {
+                        var messageType = BitConverter.ToInt32(Receive(client, 4), 0);
+                        var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
+
+                        byte[] bufferToRead = Receive(client, lenBytes);
+
+                        if (lenBytes > 0)
+                        {
+                            string result = Encoding.UTF8.GetString(bufferToRead);
+
+                            Console.WriteLine(result.Trim());
+                        }
+                        else
+                        {
+                            Console.WriteLine("Client disconnected");
+                            ns.Dispose();
+                            client.Close();
+                            server.Stop();
+                            break;
+                        }
+                    }
+                });
+
+                ResponseToClient();
+
+
+
+                /*
+                bool connectionEnd = false;
+                while (!connectionEnd)
+                {
+
+
+                }
 
                 // getting public RSA key from client
                 RSAParameters publicKey = GetPublicKeyFromClient(ns);
@@ -83,6 +171,7 @@ namespace Server
 
                 ns.Close();
                 client.Dispose();
+                */
 
             }
             
