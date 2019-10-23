@@ -23,6 +23,9 @@ namespace Blocknote
 
         private TcpClient client;
         private NetworkStream ns;
+        private byte[] aes;
+        private byte[] aesIV;
+        private Connection connection;
 
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -34,11 +37,13 @@ namespace Blocknote
 
 
             // RSA keys are generated inside
-            var connection = new Connection(client);
+            connection = new Connection(client);
             ns = client.GetStream();
 
             // Client send RSA public key to server
             connection.SendPublicKeyToServer(client);
+
+       
 
             ReceiveResponseFromServerAsync();
 
@@ -99,13 +104,20 @@ namespace Blocknote
 
                         byte[] bufferToRead = Connection.Receive(client, lenBytes);
 
-                        if (lenBytes > 0 && messageType == TCPConnection.ENCRYPTED_AES_WITH_RSA)
+                        if (messageType == TCPConnection.ENCRYPTED_AES_WITH_RSA)
                         {
-                            string result = Encoding.UTF8.GetString(bufferToRead);
-                            serverMessageLabel.Invoke((MethodInvoker)delegate
-                           {
-                               serverMessageLabel.Text = result;
-                           });
+                            var aesKey = new byte[128];
+                            Array.Copy(bufferToRead, 0, aesKey, 0, 128);
+                            aes = connection.Decrypt(aesKey);
+
+                            var aesIV = new byte[128];
+                            Array.Copy(bufferToRead, 128, aesIV, 0, 128);
+                            aesIV = connection.Decrypt(aesIV);
+
+                            Invoke((MethodInvoker)delegate
+                            {
+                                getSessionKeyButton.Enabled = true;
+                            });
                         }
                         else
                         {
@@ -140,6 +152,7 @@ namespace Blocknote
         private void getSessionKeyButton_Click(object sender, EventArgs e)
         {
             Connection.Send(client, TCPConnection.GET_SESSION_KEY, null);
+            getSessionKeyButton.Enabled = false;
         }
     }
 }

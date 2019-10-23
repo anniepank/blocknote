@@ -18,17 +18,15 @@ namespace Server
         private static TcpListener server;
         private static NetworkStream ns;
         private static TcpClient client;
-        private static AES aes;
+       // private static AES aes;
         private static RSACryptoServiceProvider rsa;
 
         public static RijndaelManaged myRijndael;
 
-        
+
 
         private static RSACryptoServiceProvider GetPublicKeyFromClient(TcpClient client, int len)
         {
-            
-                
             var msg = Receive(client, len);
             RSAParameters publicKey = Serializer.DeserializeKey(Encoding.Default.GetString(msg));
             var rsa = new RSACryptoServiceProvider();
@@ -48,6 +46,7 @@ namespace Server
 
         public static byte[] Receive(TcpClient client, int length)
         {
+            Console.Write("Read: " + length);
             var message = new byte[length];
             int read = 0;
             while (read < message.Length)
@@ -60,12 +59,12 @@ namespace Server
 
         public static void Send(TcpClient client, int messageType, byte[] msg)
         {
-            if (client.GetStream() != null && client.GetStream().CanWrite)
-            {
-                client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
-                client.GetStream().Write(BitConverter.GetBytes(msg.Length), 0, 4);
-                client.GetStream().Write(msg, 0, msg.Length);
-            }
+            Console.Write("Send:" + 4);
+            Console.Write("Send:" + 4);
+            Console.Write("Send:" + msg.Length);
+            client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
+            client.GetStream().Write(BitConverter.GetBytes(msg.Length), 0, 4);
+            client.GetStream().Write(msg, 0, msg.Length);
         }
 
 
@@ -82,16 +81,29 @@ namespace Server
         }
 
 
-        public static void GenerateSessionKey()
+        public static AES GenerateSessionKey()
         {
-            aes = new AES();
+            AES aes = new AES();
             aes.GenerateSessionKey();
+            return aes;
+        }
+
+        public static void SendEcryptedSessionKey(AES aes)
+        {
+            var encr = rsa.Encrypt(aes.rijndaelManaged.Key, false);
+            var encrIV = rsa.Encrypt(aes.rijndaelManaged.IV, false);
+
+            var msg = new byte[encr.Length + encrIV.Length];
+            Array.Copy(encr, 0, msg, 0, encr.Length);
+            Array.Copy(encrIV, 0, msg, encr.Length, encrIV.Length);
+
+            Send(client, TCPConnection.ENCRYPTED_AES_WITH_RSA, msg);
         }
 
         static void Main(string[] args)
         {
-            
-            
+
+
             var original = "abs";
             /*
                 byte[] encrypted = AES.EncryptStringToBytes(original, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
@@ -112,15 +124,28 @@ namespace Server
 
                 ns = client.GetStream();
 
+
                 Task.Factory.StartNew(() =>
                 {
+                    AES aes;
                     while (true)
                     {
-                        var messageType = BitConverter.ToInt32(Receive(client, 4), 0);
+                        int messageType;
+                        try
+                        {
+                            messageType = BitConverter.ToInt32(Receive(client, 4), 0);
+                        }
+                        catch (IOException e)
+                        {
+                            break;
+                        }
+
 
                         if (messageType == TCPConnection.GET_SESSION_KEY)
                         {
-                            GenerateSessionKey();
+                            var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
+                            aes = GenerateSessionKey();
+                            SendEcryptedSessionKey(aes);
                         }
 
                         if (messageType == TCPConnection.PUBLIC_KEY)
@@ -130,6 +155,7 @@ namespace Server
                         }
 
 
+                        /*
                         if (messageType != TCPConnection.GET_SESSION_KEY)
                         {
                             var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
@@ -142,7 +168,7 @@ namespace Server
 
                                 Console.WriteLine(result.Trim());
                             }
-                        }
+                        }*/
                     }
                 });
 
@@ -183,7 +209,7 @@ namespace Server
                 */
 
             }
-            
+
 
         }
     }

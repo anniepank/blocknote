@@ -1,6 +1,7 @@
 ﻿using Crypto;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -51,6 +52,7 @@ namespace Blocknote
 
         public static byte[] Receive(TcpClient client, int length)
         {
+            Console.WriteLine("Read: " + length);
             var message = new byte[length];
             int read = 0;
             while (read < message.Length)
@@ -63,14 +65,22 @@ namespace Blocknote
 
         public static void Send(TcpClient client, int messageType, byte[] msg)
         {
-            if (client.GetStream().CanWrite && client.GetStream() != null)
+
+            if (msg == null)
+            {
+                Console.WriteLine("Write: 4");
+                Console.WriteLine("Write: 4");
+                client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
+                client.GetStream().Write(BitConverter.GetBytes(0), 0, 4);
+            }
+
+            if (messageType != TCPConnection.GET_SESSION_KEY)
             {
                 client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
-                if (messageType != TCPConnection.GET_SESSION_KEY)
-                {
-                    client.GetStream().Write(BitConverter.GetBytes(msg.Length), 0, 4);
-                    client.GetStream().Write(msg, 0, msg.Length);
-                }
+                Console.WriteLine("Write: 4");
+                client.GetStream().Write(BitConverter.GetBytes(msg.Length), 0, 4);
+                Console.WriteLine("Write: " + msg.Length);
+                client.GetStream().Write(msg, 0, msg.Length);
             }
 
         }
