@@ -19,7 +19,7 @@ namespace Server
         private static NetworkStream ns;
         private static TcpClient client;
        // private static AES aes;
-        private static RSACryptoServiceProvider rsa;
+        // private static RSACryptoServiceProvider rsa;
 
         public static RijndaelManaged myRijndael;
 
@@ -88,7 +88,7 @@ namespace Server
             return aes;
         }
 
-        public static void SendEcryptedSessionKey(AES aes)
+        public static void SendEcryptedSessionKey(AES aes, RSACryptoServiceProvider rsa)
         {
             var encr = rsa.Encrypt(aes.rijndaelManaged.Key, false);
             var encrIV = rsa.Encrypt(aes.rijndaelManaged.IV, false);
@@ -128,6 +128,7 @@ namespace Server
                 Task.Factory.StartNew(() =>
                 {
                     AES aes;
+                    RSACryptoServiceProvider rsa = null;
                     while (true)
                     {
                         int messageType;
@@ -145,7 +146,7 @@ namespace Server
                         {
                             var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
                             aes = GenerateSessionKey();
-                            SendEcryptedSessionKey(aes);
+                            SendEcryptedSessionKey(aes, rsa);
                         }
 
                         if (messageType == TCPConnection.PUBLIC_KEY)

@@ -33,6 +33,8 @@
             this.serverResponse = new System.Windows.Forms.Label();
             this.serverText = new System.Windows.Forms.TextBox();
             this.getSessionKeyButton = new System.Windows.Forms.Button();
+            this.generateRSAButton = new System.Windows.Forms.Button();
+            this.connectToServerButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // serverMessageLabel
@@ -75,17 +77,39 @@
             // 
             this.getSessionKeyButton.Location = new System.Drawing.Point(42, 26);
             this.getSessionKeyButton.Name = "getSessionKeyButton";
-            this.getSessionKeyButton.Size = new System.Drawing.Size(177, 44);
+            this.getSessionKeyButton.Size = new System.Drawing.Size(177, 48);
             this.getSessionKeyButton.TabIndex = 4;
             this.getSessionKeyButton.Text = "Get AES";
             this.getSessionKeyButton.UseVisualStyleBackColor = true;
             this.getSessionKeyButton.Click += new System.EventHandler(this.getSessionKeyButton_Click);
+            // 
+            // generateRSAButton
+            // 
+            this.generateRSAButton.Location = new System.Drawing.Point(42, 107);
+            this.generateRSAButton.Name = "generateRSAButton";
+            this.generateRSAButton.Size = new System.Drawing.Size(177, 49);
+            this.generateRSAButton.TabIndex = 5;
+            this.generateRSAButton.Text = "Generate RSA";
+            this.generateRSAButton.UseVisualStyleBackColor = true;
+            this.generateRSAButton.Click += new System.EventHandler(this.generateRSAButton_Click);
+            // 
+            // connectToServerButton
+            // 
+            this.connectToServerButton.Location = new System.Drawing.Point(42, 184);
+            this.connectToServerButton.Name = "connectToServerButton";
+            this.connectToServerButton.Size = new System.Drawing.Size(177, 51);
+            this.connectToServerButton.TabIndex = 6;
+            this.connectToServerButton.Text = "Connect to server";
+            this.connectToServerButton.UseVisualStyleBackColor = true;
+            this.connectToServerButton.Click += new System.EventHandler(this.connectToServerButton_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.connectToServerButton);
+            this.Controls.Add(this.generateRSAButton);
             this.Controls.Add(this.getSessionKeyButton);
             this.Controls.Add(this.serverText);
             this.Controls.Add(this.serverResponse);
@@ -106,6 +130,8 @@
         private System.Windows.Forms.Label serverResponse;
         private System.Windows.Forms.TextBox serverText;
         private System.Windows.Forms.Button getSessionKeyButton;
+        private System.Windows.Forms.Button generateRSAButton;
+        private System.Windows.Forms.Button connectToServerButton;
     }
 }
 

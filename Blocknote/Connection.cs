@@ -16,11 +16,9 @@ namespace Blocknote
         private RSAParameters privateKey;
         private RSACryptoServiceProvider cryptoServiceProvider;
         public int RSAKeySize = 1024;
-        private TcpClient client;
-
-        public Connection(TcpClient client)
+   
+        public Connection()
         {
-            this.client = client;
             cryptoServiceProvider = new RSACryptoServiceProvider();
 
             privateKey = cryptoServiceProvider.ExportParameters(true);

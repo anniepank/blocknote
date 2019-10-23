@@ -29,23 +29,11 @@ namespace Blocknote
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            
 
-            // establishing connection with server
-            client = new TcpClient();
-            client.Connect("127.0.0.1", 9999);
-
-
-            // RSA keys are generated inside
-            connection = new Connection(client);
-            ns = client.GetStream();
-
-            // Client send RSA public key to server
-            connection.SendPublicKeyToServer(client);
-
-       
-
-            ReceiveResponseFromServerAsync();
+            connectToServerButton.Enabled = false;
+            getSessionKeyButton.Enabled = false;
+            generateRSAButton.Enabled = true;
+           
 
             /*
             bool connectionEndMessage = false;
@@ -153,6 +141,30 @@ namespace Blocknote
         {
             Connection.Send(client, TCPConnection.GET_SESSION_KEY, null);
             getSessionKeyButton.Enabled = false;
+        }
+
+        private void generateRSAButton_Click(object sender, EventArgs e)
+        {
+            connectToServerButton.Enabled = true;
+            generateRSAButton.Enabled = false;
+            // RSA keys are generated inside
+            connection = new Connection();
+        }
+
+        private void connectToServerButton_Click(object sender, EventArgs e)
+        {
+            connectToServerButton.Enabled = false;
+            getSessionKeyButton.Enabled = true;
+            // establishing connection with server
+            client = new TcpClient();
+            client.Connect("127.0.0.1", 9999);
+            ns = client.GetStream();
+
+
+            // Client send RSA public key to server
+            connection.SendPublicKeyToServer(client);
+
+            ReceiveResponseFromServerAsync();
         }
     }
 }
