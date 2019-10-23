@@ -15,6 +15,7 @@ namespace Crypto
  5 - encrypted AES with RSA
  6 - end connection
  7 - aes key is dying
+ 8 - login
      */
 
         public const int PUBLIC_KEY = 1;
@@ -22,5 +23,7 @@ namespace Crypto
         public const int GET_SESSION_KEY = 3;
         public const int ENCRYPTED_AES_WITH_RSA = 5;
         public const int SESSION_KEY_EXPIRED = 7;
+        public const int LOGIN = 8;
+
     }
 }

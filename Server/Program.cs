@@ -127,7 +127,7 @@ namespace Server
 
                 Task.Factory.StartNew(() =>
                 {
-                    AES aes;
+                    AES aes = null;
                     RSACryptoServiceProvider rsa = null;
                     while (true)
                     {
@@ -153,6 +153,29 @@ namespace Server
                         {
                             var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
                             rsa = GetPublicKeyFromClient(client, lenBytes);
+                        }
+
+                        if (messageType == TCPConnection.LOGIN)
+                        {
+                            var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
+                            var msg = Receive(client, lenBytes);
+
+                            byte[] loginLenArray = new byte[4];
+                            Array.Copy(msg, 0, loginLenArray, 0, 4);
+
+                            var loginLen = BitConverter.ToInt32(loginLenArray, 0);
+
+                            byte[] loginArray = new byte[loginLen];
+                            Array.Copy(msg, 4, loginArray, 0, loginLen);
+                            loginArray = AES.Decrypt(loginArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
+                            var login = Encoding.Default.GetString(loginArray);
+
+                            var passwordLen = msg.Length - 4 - loginLen;
+                            byte[] passwordArray = new byte[passwordLen];
+                            Array.Copy(msg, 4 + loginLen, passwordArray, 0, passwordLen);
+                            passwordArray = AES.Decrypt(passwordArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
+                            var password = Encoding.Default.GetString(passwordArray);
+                            int a = 5;
                         }
 
 
