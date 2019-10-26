@@ -12,43 +12,30 @@ namespace Blocknote
 {
     public class Connection
     {
-        private RSAParameters publicKey;
-        private RSAParameters privateKey;
-        private RSACryptoServiceProvider cryptoServiceProvider;
+       
         public int RSAKeySize = 1024;
+        private RSAKeyPair keys;
+        private TcpClient client;
    
-        public Connection()
+        public Connection(TcpClient client, RSAKeyPair keys)
         {
-            cryptoServiceProvider = new RSACryptoServiceProvider();
-
-            privateKey = cryptoServiceProvider.ExportParameters(true);
-            publicKey = cryptoServiceProvider.ExportParameters(false);
-
+            this.keys = keys;
+            this.client = client;
         }
 
-        public byte[] Decrypt(byte[] message)
+        public void SendPublicKeyToServer() 
         {
-            return cryptoServiceProvider.Decrypt(message, false);
+            var serializedKey = Encoding.Default.GetBytes(keys.SerializePublicKey());
+            Send(TCPConnection.PUBLIC_KEY, serializedKey);
         }
 
-        public string SerializePublicKey()
-        {
-            return Serializer.SerializeKey(publicKey);
-        }
-
-        public void SendPublicKeyToServer(TcpClient client) 
-        {
-            var serializedKey = Encoding.Default.GetBytes(SerializePublicKey());
-            Send(client, TCPConnection.PUBLIC_KEY, serializedKey);
-        }
-
-        public void SendTextName(TcpClient client, string name)
+        public void SendTextName(string name)
         {
             var msg = Encoding.Default.GetBytes(name);
-            Send(client, TCPConnection.FILE_NAME_HEADER, msg);
+            Send(TCPConnection.FILE_NAME_HEADER, msg);
         }
 
-        public static byte[] Receive(TcpClient client, int length)
+        public byte[] Receive(int length)
         {
             Console.WriteLine("Read: " + length);
             var message = new byte[length];
@@ -61,7 +48,7 @@ namespace Blocknote
             return message;
         }
 
-        public static void Send(TcpClient client, int messageType, byte[] msg)
+        public void Send(int messageType, byte[] msg)
         {
 
             if (msg == null)

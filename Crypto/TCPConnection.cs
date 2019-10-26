@@ -24,6 +24,10 @@ namespace Crypto
         public const int ENCRYPTED_AES_WITH_RSA = 5;
         public const int SESSION_KEY_EXPIRED = 7;
         public const int LOGIN = 8;
+        public const int LOGIN_APPROVED = 9;
+        public const int LOGIN_REJECTED = 10;
+        public const int FILENAME = 11;
+        public const int TEXT = 12;
 
     }
 }

@@ -1,14 +1,9 @@
 ﻿using Crypto;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
+using System.IO;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -23,15 +18,38 @@ namespace Blocknote
 
         private TcpClient client;
         private NetworkStream ns;
-        private byte[] aes;
-        private byte[] aesIV;
+        private byte[] sessionAESKey;
+        private byte[] sessionAESIV;
+
+        private byte[] masterAESKey;
+        private byte[] masterAESIV;
+
         private Connection connection;
+        private RSAKeyPair keyPair;
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            var masterKeyForm = new MasterKey();
+            masterKeyForm.ShowDialog();
+            GetMasterKey(masterKeyForm.Result);
 
-            getSessionKeyButton.Enabled = false;
-            generateRSAButton.Enabled = true;
+
+            if (File.Exists("RSAKey.bin"))
+            {
+                var serialize = Encoding.UTF8.GetString(AES.Decrypt(File.ReadAllBytes("RSAKey.bin"), masterAESKey, masterAESIV));
+                keyPair = new RSAKeyPair(
+                    Serializer.DeserializeKey(serialize.Split('$')[0])
+                );
+                generateRSAButton.Enabled = false;
+                getSessionKeyButton.Enabled = true;
+            } else
+            {
+                generateRSAButton.Enabled = true;
+                getSessionKeyButton.Enabled = false;
+
+            }
+
+            loginRejected.Visible = false;
 
             toggleLoginForm(false);
 
@@ -87,24 +105,49 @@ namespace Blocknote
                 {
                     try
                     {
-                        var messageType = BitConverter.ToInt32(Connection.Receive(client, 4), 0);
-                        var lenBytes = BitConverter.ToInt32(Connection.Receive(client, 4), 0);
+                        var messageType = BitConverter.ToInt32(connection.Receive(4), 0);
+                        var lenBytes = BitConverter.ToInt32(connection.Receive(4), 0);
 
-                        byte[] bufferToRead = Connection.Receive(client, lenBytes);
+                        byte[] msg = connection.Receive(lenBytes);
 
                         if (messageType == TCPConnection.ENCRYPTED_AES_WITH_RSA)
                         {
-                            aes = new byte[128];
-                            Array.Copy(bufferToRead, 0, aes, 0, 128);
-                            aes = connection.Decrypt(aes);
+                            sessionAESKey = new byte[128];
+                            Array.Copy(msg, 0, sessionAESKey, 0, 128);
+                            sessionAESKey = keyPair.Decrypt(sessionAESKey);
 
-                            aesIV = new byte[128];
-                            Array.Copy(bufferToRead, 128, aesIV, 0, 128);
-                            aesIV = connection.Decrypt(aesIV);
+                            sessionAESIV = new byte[128];
+                            Array.Copy(msg, 128, sessionAESIV, 0, 128);
+                            sessionAESIV = keyPair.Decrypt(sessionAESIV);
 
                             Invoke((MethodInvoker)delegate
                             {
                                 getSessionKeyButton.Enabled = false;
+                            });
+                        }
+                        else if (messageType == TCPConnection.LOGIN_APPROVED)
+                        {
+                            Invoke((MethodInvoker)delegate
+                            {
+                                toggleLoginForm(false);
+                                loginRejected.Visible = false;
+                                blocknote.Visible = true;
+                            });
+                        }
+                        else if (messageType == TCPConnection.LOGIN_REJECTED)
+                        {
+                            Invoke((MethodInvoker)delegate
+                            {
+                                toggleLoginForm(true);
+                                loginRejected.Visible = true;
+                            });
+                        }
+                        else if (messageType == TCPConnection.TEXT)
+                        {
+                            var text = Encoding.UTF8.GetString(msg);
+                            Invoke((MethodInvoker)delegate
+                            {
+                                textBox1.Text = text;
                             });
                         }
                         else
@@ -124,7 +167,7 @@ namespace Blocknote
         {
             string somethingToSay = "hello from client";
             byte[] buffer = Encoding.UTF8.GetBytes(somethingToSay);
-            Connection.Send(client, TCPConnection.PUBLIC_KEY, buffer);
+            connection.Send(TCPConnection.PUBLIC_KEY, buffer);
         }
 
         private void getSessionKeyButton_Click(object sender, EventArgs e)
@@ -133,21 +176,22 @@ namespace Blocknote
 
             client = new TcpClient();
             client.Connect("127.0.0.1", 9999);
-            ns = client.GetStream();
+            connection = new Connection(client, keyPair);
+
 
             // Client send RSA public key to server
-            connection.SendPublicKeyToServer(client);
+            connection.SendPublicKeyToServer();
 
             ReceiveResponseFromServerAsync();
 
-            Connection.Send(client, TCPConnection.GET_SESSION_KEY, null);
+            connection.Send(TCPConnection.GET_SESSION_KEY, null);
             getSessionKeyButton.Enabled = false;
 
-            
+
 
             toggleLoginForm(true);
 
-            
+
         }
 
         private void generateRSAButton_Click(object sender, EventArgs e)
@@ -155,7 +199,11 @@ namespace Blocknote
             getSessionKeyButton.Enabled = true;
             generateRSAButton.Enabled = false;
             // RSA keys are generated inside
-            connection = new Connection();
+            
+            keyPair = new RSAKeyPair();
+            var serialized = Serializer.SerializeKey(keyPair.privateKey) + "$";
+            var keyPairEncrypted = AES.Encrypt(Encoding.UTF8.GetBytes(serialized), masterAESKey, masterAESIV);
+            File.WriteAllBytes("RSAKey.bin", keyPairEncrypted);
         }
 
 
@@ -182,8 +230,8 @@ namespace Blocknote
         {
             login = "anna";
             password = "123";
-            byte[] loginEcnr = AES.Encrypt(Encoding.Default.GetBytes(login), aes, aesIV);
-            byte[] passwordEcnr = AES.Encrypt(Encoding.Default.GetBytes(password), aes, aesIV);
+            byte[] loginEcnr = AES.Encrypt(Encoding.Default.GetBytes(login), sessionAESKey, sessionAESIV);
+            byte[] passwordEcnr = AES.Encrypt(Encoding.Default.GetBytes(password), sessionAESKey, sessionAESIV);
             var loginLen = BitConverter.GetBytes(loginEcnr.Length);
 
             // 4 - for length of login
@@ -193,7 +241,35 @@ namespace Blocknote
             Array.Copy(loginEcnr, 0, msg, 4, loginEcnr.Length);
             Array.Copy(passwordEcnr, 0, msg, 4 + loginEcnr.Length, passwordEcnr.Length);
 
-            Connection.Send(client, TCPConnection.LOGIN, msg);
+            connection.Send(TCPConnection.LOGIN, msg);
+        }
+
+        private void getTextButton_Click(object sender, EventArgs e)
+        {
+            var filename = filenameBox.Text;
+            if (filename.Length != 0)
+            {
+                connection.Send(TCPConnection.FILENAME, Encoding.UTF8.GetBytes(filename));
+            }
+        }
+
+        private void GetMasterKey(string password)
+        {
+            byte[] salt;
+            if (!File.Exists("salt.bin"))
+            {
+                new RNGCryptoServiceProvider().GetBytes(salt = new byte[16]);
+                File.WriteAllBytes("salt.bin", salt);
+            }
+            salt = File.ReadAllBytes("salt.bin");
+            var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 10000);
+            masterAESKey = pbkdf2.GetBytes(32);
+            masterAESIV = pbkdf2.GetBytes(16);
+        }
+
+        private void sendTextButton_Click(object sender, EventArgs e)
+        {
+
         }
     }
 

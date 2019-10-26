@@ -10,6 +10,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Schema;
 
 namespace Server
 {
@@ -18,6 +20,7 @@ namespace Server
         private static TcpListener server;
         private static NetworkStream ns;
         private static TcpClient client;
+        private static Dictionary<string, string> users;
        // private static AES aes;
         // private static RSACryptoServiceProvider rsa;
 
@@ -59,12 +62,23 @@ namespace Server
 
         public static void Send(TcpClient client, int messageType, byte[] msg)
         {
-            Console.Write("Send:" + 4);
-            Console.Write("Send:" + 4);
-            Console.Write("Send:" + msg.Length);
-            client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
-            client.GetStream().Write(BitConverter.GetBytes(msg.Length), 0, 4);
-            client.GetStream().Write(msg, 0, msg.Length);
+            if (msg == null)
+            {
+                Console.Write("Send:" + 4);
+                Console.Write("Send:" + 4);
+                client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
+                client.GetStream().Write(BitConverter.GetBytes(0), 0, 4);
+            }
+            else
+            {
+
+                Console.Write("Send:" + 4);
+                Console.Write("Send:" + 4);
+                Console.Write("Send:" + msg.Length);
+                client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
+                client.GetStream().Write(BitConverter.GetBytes(msg.Length), 0, 4);
+                client.GetStream().Write(msg, 0, msg.Length);
+            }
         }
 
 
@@ -98,6 +112,53 @@ namespace Server
             Array.Copy(encrIV, 0, msg, encr.Length, encrIV.Length);
 
             Send(client, TCPConnection.ENCRYPTED_AES_WITH_RSA, msg);
+        }
+
+        public static string getHash(string password)
+        {
+            byte[] salt;
+            new RNGCryptoServiceProvider().GetBytes(salt = new byte[16]);
+            var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 10000);
+            byte[] hash = pbkdf2.GetBytes(20);
+            byte[] hashBytes = new byte[36];
+            Array.Copy(salt, 0, hashBytes, 0, 16);
+            Array.Copy(hash, 0, hashBytes, 16, 20);
+            return Convert.ToBase64String(hashBytes);
+
+        }
+
+        private static void RegisterUser(string login, string password)
+        {
+            
+        }
+
+        public static bool checkUser(string login, string password)
+        {
+            var json = System.IO.File.ReadAllText(@"users.json");
+            var storage = JsonConvert.DeserializeObject<Storage>(json);
+
+            if (storage.Users.ContainsKey(login) && storage.Users[login] != null)
+            {
+                /* Fetch the stored value */
+                var savedHash = storage.Users[login];
+                /* Extract the bytes */
+                byte[] hashBytes = Convert.FromBase64String(savedHash);
+                /* Get the salt */
+                byte[] salt = new byte[16];
+                Array.Copy(hashBytes, 0, salt, 0, 16);
+                /* Compute the hash on the password the user entered */
+                var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 10000);
+                byte[] hash = pbkdf2.GetBytes(20);
+                /* Compare the results */
+                for (int i = 0; i < 20; i++)
+                    if (hashBytes[i + 16] != hash[i])
+                        return false;
+            }
+            else
+            {
+                return false;
+            }
+            return true;
         }
 
         static void Main(string[] args)
@@ -175,7 +236,17 @@ namespace Server
                             Array.Copy(msg, 4 + loginLen, passwordArray, 0, passwordLen);
                             passwordArray = AES.Decrypt(passwordArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
                             var password = Encoding.Default.GetString(passwordArray);
-                            int a = 5;
+
+                            if (checkUser(login, password)) {
+                                Send(client, TCPConnection.LOGIN_APPROVED, null);
+                            } else
+                            {
+                                Send(client, TCPConnection.LOGIN_REJECTED, null);
+                            }
+                        } else if (messageType == TCPConnection.FILENAME) {
+                            var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
+                            var msg = Receive(client, lenBytes);
+
                         }
 
 
