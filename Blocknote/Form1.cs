@@ -241,8 +241,8 @@ namespace Blocknote
 
         private void SendLogin(TcpClient client, string login, string password)
         {
-            login = "anna";
-            password = "123";
+            login = textBoxLogin.Text;
+            password = textBoxPassword.Text;
             byte[] loginEcnr = AES.Encrypt(Encoding.Default.GetBytes(login), sessionAESKey, sessionAESIV);
             byte[] passwordEcnr = AES.Encrypt(Encoding.Default.GetBytes(password), sessionAESKey, sessionAESIV);
             var loginLen = BitConverter.GetBytes(loginEcnr.Length);
