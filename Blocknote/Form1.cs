@@ -49,51 +49,8 @@ namespace Blocknote
             }
 
             loginRejected.Visible = false;
-
             toggleLoginForm(false);
-
-            /*
-            bool connectionEndMessage = false;
-
-            while (!connectionEndMessage)
-            {
-                var messageType = connection.ReceiveBytes(client, 4);
-                var len = connection.ReceiveBytes(client, 4);
-
-            }
-
-            
-
-            
-            // 4 bytes contains message length
-            // text length inside message
-
-            var lenBytes = connection.ReceiveBytes(client, 4);
-            var message = connection.ReceiveBytes(client, 128 + 128 + 4 + BitConverter.ToInt32(lenBytes, 0));
-
-            var aesKey = new byte[128];
-            Array.Copy(message, 0, aesKey, 0, 128);
-            var decryptedAesKey = connection.Decrypt(aesKey);
-
-
-            var aesIV = new byte[128];
-            Array.Copy(message, 128, aesIV, 0, 128);
-            var decryptedAesIV = connection.Decrypt(aesIV);
-
-            var stringLen = BitConverter.ToInt32(message, 128 + 128);
-
-            var cipheredByAes = new byte[128];
-            Array.Copy(message, 128 + 128 + 4, cipheredByAes, 0, message.Length - 128 - 128 - 4);
-
-            string decryptedCipher = AES.DecryptStringFromBytes(cipheredByAes, decryptedAesKey, decryptedAesIV);
-            decryptedCipher = decryptedCipher.Substring(0, stringLen);
-
-            serverMessageLabel.Text = decryptedCipher;
-            connection.SendTextName("simple.txt");
-
-            client.Dispose();
-            */
-
+    
         }
 
         private void ReceiveResponseFromServerAsync()
@@ -191,27 +148,19 @@ namespace Blocknote
             client.Connect("127.0.0.1", 9999);
             connection = new Connection(client, keyPair);
 
-
-            // Client send RSA public key to server
             connection.SendPublicKeyToServer();
-
             ReceiveResponseFromServerAsync();
 
             connection.Send(TCPConnection.GET_SESSION_KEY, null);
             getSessionKeyButton.Enabled = false;
 
-
-
             toggleLoginForm(true);
-
-
         }
 
         private void generateRSAButton_Click(object sender, EventArgs e)
         {
             getSessionKeyButton.Enabled = true;
             generateRSAButton.Enabled = false;
-            // RSA keys are generated inside
             
             keyPair = new RSAKeyPair();
             var serialized = Serializer.SerializeKey(keyPair.privateKey) + "$";
@@ -247,7 +196,6 @@ namespace Blocknote
             byte[] passwordEcnr = AES.Encrypt(Encoding.Default.GetBytes(password), sessionAESKey, sessionAESIV);
             var loginLen = BitConverter.GetBytes(loginEcnr.Length);
 
-            // 4 - for length of login
             var msg = new byte[4 + loginEcnr.Length + passwordEcnr.Length];
 
             Array.Copy(loginLen, 0, msg, 0, 4);

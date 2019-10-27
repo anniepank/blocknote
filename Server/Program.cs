@@ -20,13 +20,6 @@ namespace Server
         private static TcpListener server;
         private static NetworkStream ns;
         private static TcpClient client;
-        private static Dictionary<string, string> users;
-       // private static AES aes;
-        // private static RSACryptoServiceProvider rsa;
-
-        public static RijndaelManaged myRijndael;
-
-
 
         private static RSACryptoServiceProvider GetPublicKeyFromClient(TcpClient client, int len)
         {
@@ -37,15 +30,6 @@ namespace Server
 
             return rsa;
         }
-        /*
-        public static string GetTextNameFromClient(TcpClient client, NetworkStream ns)
-        {
-            byte[] buffer = new byte[client.ReceiveBufferSize];
-            int bytesRead = ns.Read(buffer, 0, client.ReceiveBufferSize);
-
-            return Encoding.Default.GetString(buffer, 0, bytesRead);
-        }
-        */
 
         public static byte[] Receive(TcpClient client, int length)
         {
@@ -64,33 +48,14 @@ namespace Server
         {
             if (msg == null)
             {
-                Console.Write("Send:" + 4);
-                Console.Write("Send:" + 4);
                 client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
                 client.GetStream().Write(BitConverter.GetBytes(0), 0, 4);
             }
             else
             {
-
-                Console.Write("Send:" + 4);
-                Console.Write("Send:" + 4);
-                Console.Write("Send:" + msg.Length);
                 client.GetStream().Write(BitConverter.GetBytes(messageType), 0, 4);
                 client.GetStream().Write(BitConverter.GetBytes(msg.Length), 0, 4);
                 client.GetStream().Write(msg, 0, msg.Length);
-            }
-        }
-
-
-        private static void ResponseToClient()
-        {
-            while (true)
-            {
-
-                if (ns != null && ns.CanWrite)
-                {
-                    Send(client, TCPConnection.ENCRYPTED_AES_WITH_RSA, Encoding.UTF8.GetBytes("encrypted key from server"));
-                }
             }
         }
 
@@ -127,11 +92,6 @@ namespace Server
 
         }
 
-        private static void RegisterUser(string login, string password)
-        {
-            
-        }
-
         public static bool checkUser(string login, string password)
         {
             var json = System.IO.File.ReadAllText(@"users.json");
@@ -163,20 +123,6 @@ namespace Server
 
         static void Main(string[] args)
         {
-
-
-            var original = "abs";
-            /*
-                byte[] encrypted = AES.EncryptStringToBytes(original, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
-
-            // Decrypt the bytes to a string.
-            string roundtrip = AES.DecryptStringFromBytes(encrypted, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
-
-            //Display the original data and the decrypted data.
-            Console.WriteLine("Original:   {0}", original);
-            Console.WriteLine("Round Trip: {0}", roundtrip);
-            */
-
             server = new TcpListener(IPAddress.Any, 9999);
             server.Start();
             while (true)
@@ -287,46 +233,7 @@ namespace Server
                         }
                     }
                 });
-
-
-                /*
-                bool connectionEnd = false;
-                while (!connectionEnd)
-                {
-
-
-                }
-
-                // getting public RSA key from client
-                RSAParameters publicKey = GetPublicKeyFromClient(ns);
-                var rsa = new RSACryptoServiceProvider();
-                rsa.ImportParameters(publicKey);
-
-                var encr = rsa.Encrypt(aes.rijndaelManaged.Key, false);
-                var encrIV = rsa.Encrypt(aes.rijndaelManaged.IV, false);
-
-                original = "abc";
-                encrypted = AES.EncryptStringToBytes(original, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
-
-                var lenBytes = BitConverter.GetBytes(encrypted.Length);
-                var stringLenBytes = BitConverter.GetBytes(original.Length);
-                ns.Write(lenBytes, 0, lenBytes.Length);
-                ns.Write(encr, 0, encr.Length);
-                ns.Write(encrIV, 0, encrIV.Length);
-                ns.Write(stringLenBytes, 0, stringLenBytes.Length);
-                ns.Write(encrypted, 0, encrypted.Length);
-                
-                // var textName = GetTextNameFromClient(client, ns);
-
-                Thread.Sleep(20000);
-
-                ns.Close();
-                client.Dispose();
-                */
-
             }
-
-
         }
     }
 }
