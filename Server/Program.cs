@@ -237,33 +237,54 @@ namespace Server
                             passwordArray = AES.Decrypt(passwordArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
                             var password = Encoding.Default.GetString(passwordArray);
 
-                            if (checkUser(login, password)) {
+                            if (checkUser(login, password))
+                            {
                                 Send(client, TCPConnection.LOGIN_APPROVED, null);
-                            } else
+                            }
+                            else
                             {
                                 Send(client, TCPConnection.LOGIN_REJECTED, null);
                             }
-                        } else if (messageType == TCPConnection.FILENAME) {
+                        }
+                        else if (messageType == TCPConnection.FILENAME)
+                        {
+                            var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
+                            var msg = Receive(client, lenBytes);
+                            var filename = Encoding.UTF8.GetString(AES.Decrypt(msg, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV));
+                            if (File.Exists(filename))
+                            {
+                                var text = File.ReadAllBytes(filename);
+                                text = AES.Encrypt(text, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
+                                Send(client, TCPConnection.TEXT, text);
+                            } else
+                            {
+                                Send(client, TCPConnection.FILE_DO_NOT_EXISTS, null);
+                            }
+                        }
+                        else if (messageType == TCPConnection.TEXT)
+                        {
                             var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
                             var msg = Receive(client, lenBytes);
 
+                            byte[] filenameLenArray = new byte[4];
+                            Array.Copy(msg, 0, filenameLenArray, 0, 4);
+
+                            var filenameLen = BitConverter.ToInt32(filenameLenArray, 0);
+
+                            byte[] filenameArray = new byte[filenameLen];
+                            Array.Copy(msg, 4, filenameArray, 0, filenameLen);
+                            filenameArray = AES.Decrypt(filenameArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
+                            var filename = Encoding.Default.GetString(filenameArray);
+
+                            var textLen = msg.Length - 4 - filenameLen;
+                            byte[] textArray = new byte[textLen];
+                            Array.Copy(msg, 4 + filenameLen, textArray, 0, textLen);
+
+                            textArray = AES.Decrypt(textArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
+
+                            File.WriteAllBytes(filename, textArray);
+                            Send(client, TCPConnection.FILE_SAVED, null);
                         }
-
-
-                        /*
-                        if (messageType != TCPConnection.GET_SESSION_KEY)
-                        {
-                            var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
-
-                            byte[] bufferToRead = Receive(client, lenBytes);
-
-                            if (lenBytes > 0)
-                            {
-                                string result = Encoding.UTF8.GetString(bufferToRead);
-
-                                Console.WriteLine(result.Trim());
-                            }
-                        }*/
                     }
                 });
 

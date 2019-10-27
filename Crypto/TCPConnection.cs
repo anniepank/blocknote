@@ -28,6 +28,9 @@ namespace Crypto
         public const int LOGIN_REJECTED = 10;
         public const int FILENAME = 11;
         public const int TEXT = 12;
+        public const int FILE_DO_NOT_EXISTS = 13;
+        public const int FILE_SAVED = 14;
+
 
     }
 }

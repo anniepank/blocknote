@@ -42,6 +42,7 @@
             this.getTextButton = new System.Windows.Forms.Button();
             this.blocknote = new System.Windows.Forms.GroupBox();
             this.sendTextButton = new System.Windows.Forms.Button();
+            this.serverResponses = new System.Windows.Forms.Label();
             this.blocknote.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -139,7 +140,6 @@
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(366, 129);
             this.textBox1.TabIndex = 15;
-            this.textBox1.Visible = false;
             // 
             // getTextButton
             // 
@@ -149,7 +149,6 @@
             this.getTextButton.TabIndex = 16;
             this.getTextButton.Text = "Get text";
             this.getTextButton.UseVisualStyleBackColor = true;
-            this.getTextButton.Visible = false;
             this.getTextButton.Click += new System.EventHandler(this.getTextButton_Click);
             // 
             // blocknote
@@ -177,11 +176,22 @@
             this.sendTextButton.UseVisualStyleBackColor = true;
             this.sendTextButton.Click += new System.EventHandler(this.sendTextButton_Click);
             // 
+            // serverResponses
+            // 
+            this.serverResponses.AutoSize = true;
+            this.serverResponses.Location = new System.Drawing.Point(38, 421);
+            this.serverResponses.Name = "serverResponses";
+            this.serverResponses.Size = new System.Drawing.Size(130, 20);
+            this.serverResponses.TabIndex = 18;
+            this.serverResponses.Text = "server responses";
+            this.serverResponses.Visible = false;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.serverResponses);
             this.Controls.Add(this.blocknote);
             this.Controls.Add(this.loginRejected);
             this.Controls.Add(this.loginButton);
@@ -216,6 +226,7 @@
         private System.Windows.Forms.Button getTextButton;
         private System.Windows.Forms.GroupBox blocknote;
         private System.Windows.Forms.Button sendTextButton;
+        private System.Windows.Forms.Label serverResponses;
     }
 }
 

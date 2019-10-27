@@ -46,7 +46,6 @@ namespace Blocknote
             {
                 generateRSAButton.Enabled = true;
                 getSessionKeyButton.Enabled = false;
-
             }
 
             loginRejected.Visible = false;
@@ -144,10 +143,24 @@ namespace Blocknote
                         }
                         else if (messageType == TCPConnection.TEXT)
                         {
-                            var text = Encoding.UTF8.GetString(msg);
+                            var text = Encoding.UTF8.GetString(AES.Decrypt(msg, sessionAESKey, sessionAESIV));
                             Invoke((MethodInvoker)delegate
                             {
                                 textBox1.Text = text;
+                            });
+                        } else if (messageType == TCPConnection.FILE_DO_NOT_EXISTS)
+                        {
+                            Invoke((MethodInvoker)delegate
+                            {
+                                serverResponses.Visible = true;
+                                serverResponses.Text = "file with such a filename does not exist";
+                            });
+                        } else if (messageType == TCPConnection.FILE_SAVED)
+                        {
+                            Invoke((MethodInvoker)delegate
+                            {
+                                serverResponses.Visible = true;
+                                serverResponses.Text = "file was saved";
                             });
                         }
                         else
@@ -247,9 +260,11 @@ namespace Blocknote
         private void getTextButton_Click(object sender, EventArgs e)
         {
             var filename = filenameBox.Text;
+            filename = "first.txt";
+            var filenameArray = AES.Encrypt(Encoding.UTF8.GetBytes(filename), sessionAESKey, sessionAESIV);
             if (filename.Length != 0)
             {
-                connection.Send(TCPConnection.FILENAME, Encoding.UTF8.GetBytes(filename));
+                connection.Send(TCPConnection.FILENAME, filenameArray);
             }
         }
 
@@ -269,7 +284,20 @@ namespace Blocknote
 
         private void sendTextButton_Click(object sender, EventArgs e)
         {
+            if (filenameBox.Text.Length != 0)
+            {
+                var text = AES.Encrypt(Encoding.Default.GetBytes(textBox1.Text), sessionAESKey, sessionAESIV);
+                var filename = AES.Encrypt(Encoding.Default.GetBytes(filenameBox.Text), sessionAESKey, sessionAESIV);
+                var filenameLength = BitConverter.GetBytes(filename.Length);
 
+                var msg = new byte[4 + filename.Length + text.Length];
+                Array.Copy(filenameLength, 0, msg, 0, 4);
+                Array.Copy(filename, 0, msg, 4, filename.Length);
+                Array.Copy(text, 0, msg, 4 + filename.Length, text.Length);
+
+                connection.Send(TCPConnection.TEXT, msg);
+            }
+            
         }
     }
 
