@@ -42,7 +42,8 @@ namespace Blocknote
                 );
                 generateRSAButton.Enabled = false;
                 getSessionKeyButton.Enabled = true;
-            } else
+            }
+            else
             {
                 generateRSAButton.Enabled = true;
                 getSessionKeyButton.Enabled = false;
@@ -50,7 +51,7 @@ namespace Blocknote
 
             loginRejected.Visible = false;
             toggleLoginForm(false);
-    
+
         }
 
         private void ReceiveResponseFromServerAsync()
@@ -59,75 +60,92 @@ namespace Blocknote
             {
                 while (true)
                 {
+                    int messageType;
                     try
                     {
-                        var messageType = BitConverter.ToInt32(connection.Receive(4), 0);
-                        var lenBytes = BitConverter.ToInt32(connection.Receive(4), 0);
-
-                        byte[] msg = connection.Receive(lenBytes);
-
-                        if (messageType == TCPConnection.ENCRYPTED_AES_WITH_RSA)
-                        {
-                            sessionAESKey = new byte[128];
-                            Array.Copy(msg, 0, sessionAESKey, 0, 128);
-                            sessionAESKey = keyPair.Decrypt(sessionAESKey);
-
-                            sessionAESIV = new byte[128];
-                            Array.Copy(msg, 128, sessionAESIV, 0, 128);
-                            sessionAESIV = keyPair.Decrypt(sessionAESIV);
-
-                            Invoke((MethodInvoker)delegate
-                            {
-                                getSessionKeyButton.Enabled = false;
-                            });
-                        }
-                        else if (messageType == TCPConnection.LOGIN_APPROVED)
-                        {
-                            Invoke((MethodInvoker)delegate
-                            {
-                                toggleLoginForm(false);
-                                loginRejected.Visible = false;
-                                blocknote.Visible = true;
-                            });
-                        }
-                        else if (messageType == TCPConnection.LOGIN_REJECTED)
-                        {
-                            Invoke((MethodInvoker)delegate
-                            {
-                                toggleLoginForm(true);
-                                loginRejected.Visible = true;
-                            });
-                        }
-                        else if (messageType == TCPConnection.TEXT)
-                        {
-                            var text = Encoding.UTF8.GetString(AES.Decrypt(msg, sessionAESKey, sessionAESIV));
-                            Invoke((MethodInvoker)delegate
-                            {
-                                textBox1.Text = text;
-                            });
-                        } else if (messageType == TCPConnection.FILE_DO_NOT_EXISTS)
-                        {
-                            Invoke((MethodInvoker)delegate
-                            {
-                                serverResponses.Visible = true;
-                                serverResponses.Text = "file with such a filename does not exist";
-                            });
-                        } else if (messageType == TCPConnection.FILE_SAVED)
-                        {
-                            Invoke((MethodInvoker)delegate
-                            {
-                                serverResponses.Visible = true;
-                                serverResponses.Text = "file was saved";
-                            });
-                        }
-                        else
-                        {
-                            break;
-                        }
+                        messageType = BitConverter.ToInt32(connection.Receive(4), 0);
                     }
-                    catch (Exception e)
+                    catch (IOException e)
                     {
-                        Console.Write(e);
+                        Invoke((MethodInvoker)delegate
+                        {
+                            toggleLoginForm(false);
+                            blocknote.Visible = false;
+                            getSessionKeyButton.Enabled = true;
+                            serverResponses.Visible = true;
+                            serverResponses.Text = "session has been expired";
+                        });
+                        
+                        break;
+                    }
+
+                    var lenBytes = BitConverter.ToInt32(connection.Receive(4), 0);
+                    Invoke((MethodInvoker)delegate
+                    {
+                        serverResponses.Visible = false;
+                    });
+
+                    byte[] msg = connection.Receive(lenBytes);
+
+                    if (messageType == TCPConnection.ENCRYPTED_AES_WITH_RSA)
+                    {
+                        sessionAESKey = new byte[128];
+                        Array.Copy(msg, 0, sessionAESKey, 0, 128);
+                        sessionAESKey = keyPair.Decrypt(sessionAESKey);
+
+                        sessionAESIV = new byte[128];
+                        Array.Copy(msg, 128, sessionAESIV, 0, 128);
+                        sessionAESIV = keyPair.Decrypt(sessionAESIV);
+
+                        Invoke((MethodInvoker)delegate
+                        {
+                            getSessionKeyButton.Enabled = false;
+                        });
+                    }
+                    else if (messageType == TCPConnection.LOGIN_APPROVED)
+                    {
+                        Invoke((MethodInvoker)delegate
+                        {
+                            toggleLoginForm(false);
+                            loginRejected.Visible = false;
+                            blocknote.Visible = true;
+                        });
+                    }
+                    else if (messageType == TCPConnection.LOGIN_REJECTED)
+                    {
+                        Invoke((MethodInvoker)delegate
+                        {
+                            toggleLoginForm(true);
+                            loginRejected.Visible = true;
+                        });
+                    }
+                    else if (messageType == TCPConnection.TEXT)
+                    {
+                        var text = Encoding.UTF8.GetString(AES.Decrypt(msg, sessionAESKey, sessionAESIV));
+                        Invoke((MethodInvoker)delegate
+                        {
+                            textBox1.Text = text;
+                        });
+                    }
+                    else if (messageType == TCPConnection.FILE_DO_NOT_EXISTS)
+                    {
+                        Invoke((MethodInvoker)delegate
+                        {
+                            serverResponses.Visible = true;
+                            serverResponses.Text = "file with such a filename does not exist";
+                        });
+                    }
+                    else if (messageType == TCPConnection.FILE_SAVED)
+                    {
+                        Invoke((MethodInvoker)delegate
+                        {
+                            serverResponses.Visible = true;
+                            serverResponses.Text = "file was saved";
+                        });
+                    }
+                    else
+                    {
+                        break;
                     }
                 }
             });
@@ -161,7 +179,7 @@ namespace Blocknote
         {
             getSessionKeyButton.Enabled = true;
             generateRSAButton.Enabled = false;
-            
+
             keyPair = new RSAKeyPair();
             var serialized = Serializer.SerializeKey(keyPair.privateKey) + "$";
             var keyPairEncrypted = AES.Encrypt(Encoding.UTF8.GetBytes(serialized), masterAESKey, masterAESIV);
@@ -245,7 +263,7 @@ namespace Blocknote
 
                 connection.Send(TCPConnection.TEXT, msg);
             }
-            
+
         }
     }
 

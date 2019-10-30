@@ -1,17 +1,14 @@
 using Blocknote;
 using Crypto;
+using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Schema;
 
 namespace Server
 {
@@ -128,9 +125,22 @@ namespace Server
             while (true)
             {
                 client = server.AcceptTcpClient();
+                object my_lock = new object();
 
                 ns = client.GetStream();
 
+                Task.Factory.StartNew(() =>
+                {
+                    Thread.Sleep(10000);
+                    Console.Write(DateTime.Now);
+
+                    lock (my_lock)
+                    {
+                        Console.Write(DateTime.Now);
+
+                        client.Client.Close();
+                    }
+                });
 
                 Task.Factory.StartNew(() =>
                 {
@@ -148,89 +158,93 @@ namespace Server
                             break;
                         }
 
-
-                        if (messageType == TCPConnection.GET_SESSION_KEY)
+                        lock (my_lock)
                         {
-                            var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
-                            aes = GenerateSessionKey();
-                            SendEcryptedSessionKey(aes, rsa);
-                        }
-
-                        if (messageType == TCPConnection.PUBLIC_KEY)
-                        {
-                            var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
-                            rsa = GetPublicKeyFromClient(client, lenBytes);
-                        }
-
-                        if (messageType == TCPConnection.LOGIN)
-                        {
-                            var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
-                            var msg = Receive(client, lenBytes);
-
-                            byte[] loginLenArray = new byte[4];
-                            Array.Copy(msg, 0, loginLenArray, 0, 4);
-
-                            var loginLen = BitConverter.ToInt32(loginLenArray, 0);
-
-                            byte[] loginArray = new byte[loginLen];
-                            Array.Copy(msg, 4, loginArray, 0, loginLen);
-                            loginArray = AES.Decrypt(loginArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
-                            var login = Encoding.Default.GetString(loginArray);
-
-                            var passwordLen = msg.Length - 4 - loginLen;
-                            byte[] passwordArray = new byte[passwordLen];
-                            Array.Copy(msg, 4 + loginLen, passwordArray, 0, passwordLen);
-                            passwordArray = AES.Decrypt(passwordArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
-                            var password = Encoding.Default.GetString(passwordArray);
-
-                            if (checkUser(login, password))
+                            if (messageType == TCPConnection.GET_SESSION_KEY)
                             {
-                                Send(client, TCPConnection.LOGIN_APPROVED, null);
+                                var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
+                                aes = GenerateSessionKey();
+                                SendEcryptedSessionKey(aes, rsa);
                             }
-                            else
+
+                            if (messageType == TCPConnection.PUBLIC_KEY)
                             {
-                                Send(client, TCPConnection.LOGIN_REJECTED, null);
+                                var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
+                                rsa = GetPublicKeyFromClient(client, lenBytes);
+                            }
+
+                            if (messageType == TCPConnection.LOGIN)
+                            {
+                                var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
+                                var msg = Receive(client, lenBytes);
+
+                                byte[] loginLenArray = new byte[4];
+                                Array.Copy(msg, 0, loginLenArray, 0, 4);
+
+                                var loginLen = BitConverter.ToInt32(loginLenArray, 0);
+
+                                byte[] loginArray = new byte[loginLen];
+                                Array.Copy(msg, 4, loginArray, 0, loginLen);
+                                loginArray = AES.Decrypt(loginArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
+                                var login = Encoding.Default.GetString(loginArray);
+
+                                var passwordLen = msg.Length - 4 - loginLen;
+                                byte[] passwordArray = new byte[passwordLen];
+                                Array.Copy(msg, 4 + loginLen, passwordArray, 0, passwordLen);
+                                passwordArray = AES.Decrypt(passwordArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
+                                var password = Encoding.Default.GetString(passwordArray);
+
+                                if (checkUser(login, password))
+                                {
+                                    Send(client, TCPConnection.LOGIN_APPROVED, null);
+                                }
+                                else
+                                {
+                                    Send(client, TCPConnection.LOGIN_REJECTED, null);
+                                }
+                            }
+                            else if (messageType == TCPConnection.FILENAME)
+                            {
+                                var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
+                                var msg = Receive(client, lenBytes);
+                                var filename = Encoding.UTF8.GetString(AES.Decrypt(msg, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV));
+                                if (File.Exists(filename))
+                                {
+                                    var text = File.ReadAllBytes(filename);
+                                    text = AES.Encrypt(text, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
+                                    Send(client, TCPConnection.TEXT, text);
+                                }
+                                else
+                                {
+                                    Send(client, TCPConnection.FILE_DO_NOT_EXISTS, null);
+                                }
+                            }
+                            else if (messageType == TCPConnection.TEXT)
+                            {
+                                var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
+                                var msg = Receive(client, lenBytes);
+
+                                byte[] filenameLenArray = new byte[4];
+                                Array.Copy(msg, 0, filenameLenArray, 0, 4);
+
+                                var filenameLen = BitConverter.ToInt32(filenameLenArray, 0);
+
+                                byte[] filenameArray = new byte[filenameLen];
+                                Array.Copy(msg, 4, filenameArray, 0, filenameLen);
+                                filenameArray = AES.Decrypt(filenameArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
+                                var filename = Encoding.Default.GetString(filenameArray);
+
+                                var textLen = msg.Length - 4 - filenameLen;
+                                byte[] textArray = new byte[textLen];
+                                Array.Copy(msg, 4 + filenameLen, textArray, 0, textLen);
+
+                                textArray = AES.Decrypt(textArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
+
+                                File.WriteAllBytes(filename, textArray);
+                                Send(client, TCPConnection.FILE_SAVED, null);
                             }
                         }
-                        else if (messageType == TCPConnection.FILENAME)
-                        {
-                            var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
-                            var msg = Receive(client, lenBytes);
-                            var filename = Encoding.UTF8.GetString(AES.Decrypt(msg, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV));
-                            if (File.Exists(filename))
-                            {
-                                var text = File.ReadAllBytes(filename);
-                                text = AES.Encrypt(text, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
-                                Send(client, TCPConnection.TEXT, text);
-                            } else
-                            {
-                                Send(client, TCPConnection.FILE_DO_NOT_EXISTS, null);
-                            }
-                        }
-                        else if (messageType == TCPConnection.TEXT)
-                        {
-                            var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
-                            var msg = Receive(client, lenBytes);
 
-                            byte[] filenameLenArray = new byte[4];
-                            Array.Copy(msg, 0, filenameLenArray, 0, 4);
-
-                            var filenameLen = BitConverter.ToInt32(filenameLenArray, 0);
-
-                            byte[] filenameArray = new byte[filenameLen];
-                            Array.Copy(msg, 4, filenameArray, 0, filenameLen);
-                            filenameArray = AES.Decrypt(filenameArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
-                            var filename = Encoding.Default.GetString(filenameArray);
-
-                            var textLen = msg.Length - 4 - filenameLen;
-                            byte[] textArray = new byte[textLen];
-                            Array.Copy(msg, 4 + filenameLen, textArray, 0, textLen);
-
-                            textArray = AES.Decrypt(textArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
-
-                            File.WriteAllBytes(filename, textArray);
-                            Send(client, TCPConnection.FILE_SAVED, null);
-                        }
                     }
                 });
             }
