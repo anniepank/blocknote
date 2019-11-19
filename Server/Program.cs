@@ -91,8 +91,26 @@ namespace Server
 
         public static bool checkUser(string login, string password)
         {
+            /*
+             * 
+                var s = new Storage();
+                JsonSerializer serializer = new JsonSerializer();
+                s.Users = new System.Collections.Generic.Dictionary<string, string>();
+                s.Users.Add(login, getHash(password));
+
+                var serialized = JsonConvert.SerializeObject(s);
+            
+                using (StreamWriter sw = new StreamWriter(@"users.json"))
+                    using (JsonWriter writer = new JsonTextWriter(sw))
+                    {
+                        serializer.Serialize(writer, s);
+                    }
+               
+                 * 
+             */
             var json = System.IO.File.ReadAllText(@"users.json");
             var storage = JsonConvert.DeserializeObject<Storage>(json);
+
 
             if (storage.Users.ContainsKey(login) && storage.Users[login] != null)
             {
@@ -131,7 +149,7 @@ namespace Server
 
                 Task.Factory.StartNew(() =>
                 {
-                    Thread.Sleep(10000);
+                    Thread.Sleep(30000);
                     Console.Write(DateTime.Now);
 
                     lock (my_lock)
