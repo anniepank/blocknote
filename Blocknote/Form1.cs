@@ -206,23 +206,29 @@ namespace Blocknote
             string login = textBoxLogin.Text;
             string password = textBoxPassword.Text;
             SendLogin(client, login, password);
+
             var key = KeyGeneration.GenerateRandomKey(32);
+
+            Console.Write("Key: ");
+            Console.Write(key);
+
             var base32String = Base32Encoding.ToString(key);
             var base32Bytes = Base32Encoding.ToBytes(base32String);
             var totp = new Totp(base32Bytes);
 
-            var totpCode = totp.ComputeTotp(DateTime.UtcNow);
-            generateQrCode(totpCode);
+            string totpCode = totp.ComputeTotp();
+            generateQrCode(totpCode, login);
         }
 
-        private void generateQrCode(string key)
+        private void generateQrCode(string key, string login)
         {
             QRCodeGenerator qr = new QRCodeGenerator();
-            QRCodeData qrData = qr.CreateQrCode(key, QRCodeGenerator.ECCLevel.Q);
+            var secret = "otpauth://totp/Example:" + login + "?secret=" + key + "&issuer=Example";
+            QRCodeData qrData = qr.CreateQrCode(secret, QRCodeGenerator.ECCLevel.Q);
             QRCode code = new QRCode(qrData);
 
             QRCodeForm qrForm = new QRCodeForm();
-            qrForm.QRPic = code.GetGraphic(5);
+            qrForm.QRPic = code.GetGraphic(2);
             qrForm.ShowDialog();
         }
 

@@ -8,6 +8,8 @@
     <PackageReference Include="Otp.NET" Version="1.2.2" />
     <PackageReference Include="OtpSharp" Version="1.3.0.4" />
     <PackageReference Include="QRCoder" Version="1.3.6" />
+    <PackageReference Include="TwoFactorAuth.Net" Version="1.3.8" />
+    <PackageReference Include="TwoFactorAuth.Net.QRCoder" Version="1.0.2" />
   </ItemGroup>
 
 </Project>
