@@ -9,10 +9,11 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using OtpSharp;
 
 namespace Server
 {
-    class Program
+    class Program 
     {
         private static TcpListener server;
         private static NetworkStream ns;
@@ -149,6 +150,7 @@ namespace Server
 
                 Task.Factory.StartNew(() =>
                 {
+                    // change this to change session life time
                     Thread.Sleep(30000);
                     Console.Write(DateTime.Now);
 
@@ -214,6 +216,10 @@ namespace Server
 
                                 if (checkUser(login, password))
                                 {
+                                    var secretKey = KeyGeneration.GenerateRandomKey(20);
+                                    var totp = new Totp(secretKey);
+                                    var totpCode = totp.ComputeTotp(DateTime.UtcNow);
+
                                     Send(client, TCPConnection.LOGIN_APPROVED, null);
                                 }
                                 else

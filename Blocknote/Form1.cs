@@ -1,4 +1,6 @@
 ﻿using Crypto;
+using OtpNet;
+using QRCoder;
 using System;
 using System.IO;
 using System.Net.Sockets;
@@ -204,6 +206,24 @@ namespace Blocknote
             string login = textBoxLogin.Text;
             string password = textBoxPassword.Text;
             SendLogin(client, login, password);
+            var key = KeyGeneration.GenerateRandomKey(32);
+            var base32String = Base32Encoding.ToString(key);
+            var base32Bytes = Base32Encoding.ToBytes(base32String);
+            var totp = new Totp(base32Bytes);
+
+            var totpCode = totp.ComputeTotp(DateTime.UtcNow);
+            generateQrCode(totpCode);
+        }
+
+        private void generateQrCode(string key)
+        {
+            QRCodeGenerator qr = new QRCodeGenerator();
+            QRCodeData qrData = qr.CreateQrCode(key, QRCodeGenerator.ECCLevel.Q);
+            QRCode code = new QRCode(qrData);
+
+            QRCodeForm qrForm = new QRCodeForm();
+            qrForm.QRPic = code.GetGraphic(5);
+            qrForm.ShowDialog();
         }
 
         private void SendLogin(TcpClient client, string login, string password)

@@ -9,7 +9,8 @@ Clone repository and add .json file with the users and their password hashes, wh
 
 ## Usage
 
-
+Master key is something that can only user know, it is not stored in the app. For testing purposes master key is "123" \n
+Possible login for testing is "anya" with password "123"
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
