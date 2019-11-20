@@ -39,5 +39,11 @@ namespace Blocknote
         {
 
         }
+
+        private void passwordQR_Click(object sender, EventArgs e)
+        {
+            Password = passwordFromQR.Text;
+            Close();
+        }
     }
 }

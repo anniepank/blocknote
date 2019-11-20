@@ -9,7 +9,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using OtpSharp;
+using QRCoder;
+using OtpNet;
 
 namespace Server
 {
@@ -216,9 +217,22 @@ namespace Server
 
                                 if (checkUser(login, password))
                                 {
-                                    var secretKey = KeyGeneration.GenerateRandomKey(20);
-                                    var totp = new Totp(secretKey);
-                                    var totpCode = totp.ComputeTotp(DateTime.UtcNow);
+                                    var key = KeyGeneration.GenerateRandomKey(32);
+
+                                    var base32String = Base32Encoding.ToString(key);
+                                    var base32Bytes = Base32Encoding.ToBytes(base32String);
+                                    Totp totp = new Totp(base32Bytes);
+
+                                    string totpCode = totp.ComputeTotp();
+
+                                    QRCodeGenerator qr = new QRCodeGenerator();
+                                    var secret = "otpauth://totp/Example:" + login + "?secret=" + key + "&issuer=Example";
+                                    QRCodeData qrData = qr.CreateQrCode(secret, QRCodeGenerator.ECCLevel.Q);
+                                    QRCode code = new QRCode(qrData);
+
+                                    string codeSerialized = JsonConvert.SerializeObject(code);
+
+                                    Send(client, TCPConnection.QR_CODE_GENERATED, AES.Encrypt(Encoding.UTF8.GetBytes(codeSerialized), aes.rijndaelManaged.Key, aes.rijndaelManaged.IV));
 
                                     Send(client, TCPConnection.LOGIN_APPROVED, null);
                                 }

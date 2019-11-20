@@ -1,4 +1,5 @@
 ﻿using Crypto;
+using Newtonsoft.Json;
 using OtpNet;
 using QRCoder;
 using System;
@@ -144,6 +145,13 @@ namespace Blocknote
                             serverResponses.Visible = true;
                             serverResponses.Text = "file was saved";
                         });
+                    } else if (messageType == TCPConnection.QR_CODE_GENERATED)
+                    {
+                        var codeSerialized = Encoding.UTF8.GetString(AES.Decrypt(msg, sessionAESKey, sessionAESIV));
+                        var code = JsonConvert.DeserializeObject<QRCode>(codeSerialized);
+
+                        generateQrCode(code);
+
                     }
                     else
                     {
@@ -206,30 +214,15 @@ namespace Blocknote
             string login = textBoxLogin.Text;
             string password = textBoxPassword.Text;
             SendLogin(client, login, password);
-
-            var key = KeyGeneration.GenerateRandomKey(32);
-
-            Console.Write("Key: ");
-            Console.Write(key);
-
-            var base32String = Base32Encoding.ToString(key);
-            var base32Bytes = Base32Encoding.ToBytes(base32String);
-            var totp = new Totp(base32Bytes);
-
-            string totpCode = totp.ComputeTotp();
-            generateQrCode(totpCode, login);
         }
 
-        private void generateQrCode(string key, string login)
+        private void generateQrCode(QRCode code)
         {
-            QRCodeGenerator qr = new QRCodeGenerator();
-            var secret = "otpauth://totp/Example:" + login + "?secret=" + key + "&issuer=Example";
-            QRCodeData qrData = qr.CreateQrCode(secret, QRCodeGenerator.ECCLevel.Q);
-            QRCode code = new QRCode(qrData);
 
             QRCodeForm qrForm = new QRCodeForm();
             qrForm.QRPic = code.GetGraphic(2);
             qrForm.ShowDialog();
+            string codeFromUser = qrForm.Password;
         }
 
         private void SendLogin(TcpClient client, string login, string password)

@@ -69,6 +69,7 @@
             this.passwordQR.TabIndex = 3;
             this.passwordQR.Text = "Send";
             this.passwordQR.UseVisualStyleBackColor = true;
+            this.passwordQR.Click += new System.EventHandler(this.passwordQR_Click);
             // 
             // QRCodeForm
             // 
