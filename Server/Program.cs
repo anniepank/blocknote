@@ -152,7 +152,7 @@ namespace Server
                 Task.Factory.StartNew(() =>
                 {
                     // change this to change session life time
-                    Thread.Sleep(30000);
+                    Thread.Sleep(120000);
                     Console.Write(DateTime.Now);
 
                     lock (my_lock)
@@ -167,6 +167,7 @@ namespace Server
                 {
                     AES aes = null;
                     RSACryptoServiceProvider rsa = null;
+                    byte[] key = null;
                     while (true)
                     {
                         int messageType;
@@ -217,24 +218,9 @@ namespace Server
 
                                 if (checkUser(login, password))
                                 {
-                                    var key = KeyGeneration.GenerateRandomKey(32);
+                                    key = KeyGeneration.GenerateRandomKey(20);
 
-                                    var base32String = Base32Encoding.ToString(key);
-                                    var base32Bytes = Base32Encoding.ToBytes(base32String);
-                                    Totp totp = new Totp(base32Bytes);
-
-                                    string totpCode = totp.ComputeTotp();
-
-                                    QRCodeGenerator qr = new QRCodeGenerator();
-                                    var secret = "otpauth://totp/Example:" + login + "?secret=" + key + "&issuer=Example";
-                                    QRCodeData qrData = qr.CreateQrCode(secret, QRCodeGenerator.ECCLevel.Q);
-                                    QRCode code = new QRCode(qrData);
-
-                                    string codeSerialized = JsonConvert.SerializeObject(code);
-
-                                    Send(client, TCPConnection.QR_CODE_GENERATED, AES.Encrypt(Encoding.UTF8.GetBytes(codeSerialized), aes.rijndaelManaged.Key, aes.rijndaelManaged.IV));
-
-                                    Send(client, TCPConnection.LOGIN_APPROVED, null);
+                                    Send(client, TCPConnection.QR_CODE_GENERATED, AES.Encrypt(key, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV));
                                 }
                                 else
                                 {
@@ -280,6 +266,20 @@ namespace Server
 
                                 File.WriteAllBytes(filename, textArray);
                                 Send(client, TCPConnection.FILE_SAVED, null);
+                            } else if (messageType == TCPConnection.QR_PASS_FROM_USER)
+                            {
+                                var lenBytes = BitConverter.ToInt32(Receive(client, 4), 0);
+                                var msg = Receive(client, lenBytes);
+
+                                byte[] qrPassArray = new byte[lenBytes];
+                                Array.Copy(msg, 0, qrPassArray, 0, lenBytes);
+                                var decrypred = AES.Decrypt(qrPassArray, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV);
+                                var pass = Encoding.Default.GetString(decrypred);
+
+                                var totp = new Totp(key);
+
+                                var isValidTotpCode = totp.VerifyTotp(DateTime.UtcNow, pass, out long timeStepMatched, new VerificationWindow(previous: 1, future: 1));
+                                Send(client, TCPConnection.LOGIN_APPROVED, null);
                             }
                         }
 

@@ -30,6 +30,8 @@ namespace Blocknote
         private Connection connection;
         private RSAKeyPair keyPair;
 
+        private string login;
+
         private void Form1_Load(object sender, EventArgs e)
         {
             var masterKeyForm = new MasterKey();
@@ -147,10 +149,10 @@ namespace Blocknote
                         });
                     } else if (messageType == TCPConnection.QR_CODE_GENERATED)
                     {
-                        var codeSerialized = Encoding.UTF8.GetString(AES.Decrypt(msg, sessionAESKey, sessionAESIV));
-                        var code = JsonConvert.DeserializeObject<QRCode>(codeSerialized);
+                        var key = AES.Decrypt(msg, sessionAESKey, sessionAESIV);
 
-                        generateQrCode(code);
+                        
+                        generateQrCode(key);
 
                     }
                     else
@@ -211,18 +213,28 @@ namespace Blocknote
 
         private void loginButton_Click(object sender, EventArgs e)
         {
-            string login = textBoxLogin.Text;
+            login = textBoxLogin.Text;
             string password = textBoxPassword.Text;
             SendLogin(client, login, password);
         }
 
-        private void generateQrCode(QRCode code)
+        private void generateQrCode(byte[] key)
         {
+            Totp totp = new Totp(key);
+
+            string totpCode = totp.ComputeTotp(DateTime.UtcNow);
+
+            QRCodeGenerator qr = new QRCodeGenerator();
+            var secret = "otpauth://totp/Example:" + login + "?secret=" + Base32Encoding.ToString(key) + "&issuer=Example";
+            QRCodeData qrData = qr.CreateQrCode(secret, QRCodeGenerator.ECCLevel.Q);
+            QRCode code = new QRCode(qrData);
 
             QRCodeForm qrForm = new QRCodeForm();
             qrForm.QRPic = code.GetGraphic(2);
             qrForm.ShowDialog();
-            string codeFromUser = qrForm.Password;
+            var codeFromUser = qrForm.Password;
+
+            connection.Send(TCPConnection.QR_PASS_FROM_USER, AES.Encrypt(Encoding.UTF8.GetBytes(codeFromUser), sessionAESKey, sessionAESIV));
         }
 
         private void SendLogin(TcpClient client, string login, string password)
