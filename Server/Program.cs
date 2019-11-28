@@ -152,7 +152,7 @@ namespace Server
                 Task.Factory.StartNew(() =>
                 {
                     // change this to change session life time
-                    Thread.Sleep(120000);
+                    Thread.Sleep(920000);
                     Console.Write(DateTime.Now);
 
                     lock (my_lock)
@@ -218,9 +218,18 @@ namespace Server
 
                                 if (checkUser(login, password))
                                 {
-                                    key = KeyGeneration.GenerateRandomKey(20);
+                                    if (key == null)
+                                    {
+                                        key = KeyGeneration.GenerateRandomKey(20);
+                                        Send(client, TCPConnection.QR_CODE_GENERATED, AES.Encrypt(key, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV));
+                                    } else
+                                    {
+                                        Send(client, TCPConnection.USE_OLD_KEY, null);
 
-                                    Send(client, TCPConnection.QR_CODE_GENERATED, AES.Encrypt(key, aes.rijndaelManaged.Key, aes.rijndaelManaged.IV));
+                                    }
+
+
+
                                 }
                                 else
                                 {

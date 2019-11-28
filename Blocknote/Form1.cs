@@ -37,7 +37,7 @@ namespace Blocknote
             var masterKeyForm = new MasterKey();
             masterKeyForm.ShowDialog();
             GetMasterKey(masterKeyForm.Result);
-
+            logout.Visible = false;
 
             if (File.Exists("RSAKey.bin"))
             {
@@ -150,9 +150,15 @@ namespace Blocknote
                     } else if (messageType == TCPConnection.QR_CODE_GENERATED)
                     {
                         var key = AES.Decrypt(msg, sessionAESKey, sessionAESIV);
-
                         
                         generateQrCode(key);
+
+                    } else if (messageType == TCPConnection.USE_OLD_KEY)
+                    {
+                        QRCodeForm qrForm = new QRCodeForm();
+                        qrForm.ShowDialog();
+                        var codeFromUser = qrForm.Password;
+                        connection.Send(TCPConnection.QR_PASS_FROM_USER, AES.Encrypt(Encoding.UTF8.GetBytes(codeFromUser), sessionAESKey, sessionAESIV));
 
                     }
                     else
@@ -202,6 +208,7 @@ namespace Blocknote
 
         private void toggleLoginForm(bool toggle)
         {
+            logout.Visible = !toggle;
             labelLogin.Visible = toggle;
             labelPassword.Visible = toggle;
 
@@ -295,6 +302,12 @@ namespace Blocknote
                 connection.Send(TCPConnection.TEXT, msg);
             }
 
+        }
+
+        private void logout_Click(object sender, EventArgs e)
+        {
+            toggleLoginForm(true);
+            blocknote.Visible = false;
         }
     }
 

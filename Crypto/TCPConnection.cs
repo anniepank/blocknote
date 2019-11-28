@@ -31,6 +31,7 @@ namespace Crypto
         public const int FILE_DO_NOT_EXISTS = 13;
         public const int FILE_SAVED = 14;
         public const int QR_CODE_GENERATED = 15;
-        public const int QR_PASS_FROM_USER = 15;
+        public const int QR_PASS_FROM_USER = 16;
+        public const int USE_OLD_KEY = 17;
     }
 }

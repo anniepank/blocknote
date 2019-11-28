@@ -43,6 +43,7 @@
             this.blocknote = new System.Windows.Forms.GroupBox();
             this.sendTextButton = new System.Windows.Forms.Button();
             this.serverResponses = new System.Windows.Forms.Label();
+            this.logout = new System.Windows.Forms.Button();
             this.blocknote.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -186,11 +187,22 @@
             this.serverResponses.Text = "server responses";
             this.serverResponses.Visible = false;
             // 
+            // logout
+            // 
+            this.logout.Location = new System.Drawing.Point(386, 417);
+            this.logout.Name = "logout";
+            this.logout.Size = new System.Drawing.Size(75, 23);
+            this.logout.TabIndex = 19;
+            this.logout.Text = "Log out";
+            this.logout.UseVisualStyleBackColor = true;
+            this.logout.Click += new System.EventHandler(this.logout_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.logout);
             this.Controls.Add(this.serverResponses);
             this.Controls.Add(this.blocknote);
             this.Controls.Add(this.loginRejected);
@@ -227,6 +239,7 @@
         private System.Windows.Forms.GroupBox blocknote;
         private System.Windows.Forms.Button sendTextButton;
         private System.Windows.Forms.Label serverResponses;
+        private System.Windows.Forms.Button logout;
     }
 }
 
